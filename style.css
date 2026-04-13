@@ -53,6 +53,14 @@ body {
   z-index: 100;
 }
 
+/* 헤더 내 요소: 밝은 배경에서 잘 보이도록 */
+.header .lang-select { color: #334155; }
+.header .swap-btn { color: #334155; }
+.header .stat-lbl { color: #475569; }
+.header .stat-num { color: var(--indigo); }
+.header .icon-btn { color: #475569; }
+.header .rec-header-btn { color: #475569; }
+
 .logo {
   display: flex;
   align-items: center;
