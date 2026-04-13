@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    // file:// 로 열리면 localhost:3000 으로 자동 이동 (마이크 권한 저장을 위해)
+    if (location.protocol === 'file:') {
+      location.replace('http://localhost:3100');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinguaLive — Asistente de Idiomas en Tiempo Real</title>
+  <meta name="description" content="Plataforma inteligente para aprender inglés con reconocimiento de voz en tiempo real y traducción con IA">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <img src="LATIDOS.png" alt="Latidos Lingua" class="logo-img">
+  </div>
+
+  <div class="lang-controls">
+    <div class="lang-select-wrap">
+      <select id="sourceLang" class="lang-select" aria-label="원본 언어"></select>
+    </div>
+    <button class="swap-btn" id="swapLang" title="언어 교체">⇄</button>
+    <div class="lang-select-wrap">
+      <select id="targetLang" class="lang-select" aria-label="번역 언어"></select>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <button class="meeting-btn" id="meetingBtn">🟢 Reunión</button>
+    <button class="summary-dl-btn" id="summaryBtn" disabled title="Activo al terminar reunión">📋 Resumen</button>
+
+    <div class="header-stat">
+      <span class="stat-num" id="wordsLearnedCount">0</span>
+      <span class="stat-lbl">palabras</span>
+    </div>
+    <button class="rec-header-btn" id="saveScriptBtn">💾 Guardar</button>
+
+    <button class="icon-btn ghost" id="clearSessionBtn" title="Reiniciar sesión">↺</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Visualizer + Mic -->
+  <section class="viz-section">
+    <canvas id="vizCanvas" class="viz-canvas" aria-hidden="true"></canvas>
+
+  </section>
+
+  <!-- Text Panels -->
+  <section class="panels">
+    <div class="panel" id="panelOrig">
+      <div class="panel-head">
+        <div class="panel-lang-info">
+          <span id="srcFlag">🇺🇸</span>
+          <span id="srcName">English</span>
+          <span class="panel-badge">Escucho</span>
+        </div>
+        <div class="panel-acts">
+          <span class="confidence-badge" id="confBadge" hidden></span>
+          <button class="icon-btn" id="speakOrigBtn" title="Escuchar pronunciación">🔊</button>
+          <button class="icon-btn" id="copyOrigBtn" title="Copiar">📋</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="origText" class="text-area">
+          <span class="placeholder">El audio reconocido aparecerá aquí...</span>
+        </div>
+        <div id="interimText" class="interim-text"></div>
+      </div>
+    </div>
+
+    <div class="panels-arrow" id="micArrow">
+      <button class="mic-btn" id="micBtn" aria-label="음성 인식 시작/중지">
+        <span id="micIcon">🎙️</span>
+      </button>
+    </div>
+
+    <div class="panel" id="panelTrans">
+      <div class="panel-head">
+        <div class="panel-lang-info">
+          <span id="tgtFlag">🇪🇸</span>
+          <span id="tgtName">Español</span>
+          <span class="panel-badge">Traducción</span>
+        </div>
+        <div class="panel-acts">
+          <button class="icon-btn" id="speakTransBtn" title="Escuchar pronunciación">🔊</button>
+          <button class="icon-btn" id="copyTransBtn" title="Copiar">📋</button>
+        </div>
+      </div>
+      <div class="panel-body" style="position:relative">
+        <div id="transText" class="text-area">
+          <span class="placeholder">La traducción al español aparecerá aquí...</span>
+        </div>
+        <div id="transLoader" class="trans-loader" hidden>
+          <span></span><span></span><span></span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- My Reply Panels -->
+  <section class="panels reply-panels">
+    <!-- Output panel (translated result) -->
+    <div class="panel" id="replyOutputPanel">
+      <div class="panel-head">
+        <div class="panel-lang-info">
+          <span id="replyOutFlag">🇺🇸</span>
+          <div class="lang-select-wrap reply-lang-wrap">
+            <select id="replyOutputLang" class="lang-select reply-lang-select">
+            </select>
+          </div>
+          <span class="panel-badge">Resultado</span>
+        </div>
+        <div class="panel-acts">
+          <button class="icon-btn" id="speakReplyBtn" title="Escuchar pronunciación">🔊</button>
+          <button class="icon-btn" id="copyReplyBtn" title="Copiar">📋</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="replyOutputText" class="text-area">
+          <span class="placeholder">Aquí aparecerá tu respuesta en inglés...</span>
+        </div>
+        <div id="replyLoader" class="trans-loader" hidden>
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panels-arrow reply-arrow">←</div>
+
+    <!-- Input panel (what I type) -->
+    <div class="panel" id="replyInputPanel">
+      <div class="panel-head">
+        <div class="panel-lang-info">
+          <span id="replyInFlag">🇪🇸</span>
+          <div class="lang-select-wrap reply-lang-wrap">
+            <select id="replyInputLang" class="lang-select reply-lang-select">
+            </select>
+          </div>
+          <span class="panel-badge reply-input-badge">Mi entrada</span>
+        </div>
+        <div class="panel-acts">
+          <button class="icon-btn ghost" id="clearReplyBtn" title="Borrar" style="font-size:.75rem">✕ Borrar</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <textarea
+          id="replyInput"
+          class="reply-textarea"
+          placeholder="Escribe aquí en español... (se traducirá automáticamente al inglés)"
+          rows="4"
+        ></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keywords -->
+  <section class="keywords-section" id="keywordsSection" hidden>
+    <div class="keywords-head">
+      <span class="kw-title">🏷️ Palabras clave</span>
+      <span class="kw-hint">Clic para guardar en vocabulario</span>
+    </div>
+    <div class="keywords-list" id="keywordsList"></div>
+  </section>
+
+  <!-- Bottom Tabs -->
+  <section class="bottom-section">
+    <div class="tab-header">
+      <button class="tab-btn active" data-panel="vocabPanel" id="tabVocabBtn">
+        ⭐ Mi Vocabulario <span class="tab-cnt" id="vocabCnt">0</span>
+      </button>
+      <button class="tab-btn" data-panel="historyPanel" id="tabHistoryBtn">
+        📜 Historial <span class="tab-cnt" id="historyCnt">0</span>
+      </button>
+
+    </div>
+
+    <div id="vocabPanel" class="tab-panel">
+      <div class="empty-state" id="vocabEmpty">
+        <span class="empty-icon">📚</span>
+        <p>Haz clic en las palabras clave para guardarlas en tu vocabulario</p>
+      </div>
+      <div class="vocab-list" id="vocabList"></div>
+    </div>
+
+    <div id="historyPanel" class="tab-panel" hidden>
+      <div class="empty-state" id="historyEmpty">
+        <span class="empty-icon">🎙️</span>
+        <p>El historial de voz aparecerá aquí</p>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+
+  </section>
+
+</main>
+
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
